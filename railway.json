@@ -3,5 +3,5 @@
     "builder": "Dockerfile"
   },
   "start": "php -S 0.0.0.0:$PORT -t public",
-  "healthCheckPath": "/index.php"
+  "healthCheckPath": "/health.php"
 }
