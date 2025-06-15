@@ -1,27 +1,26 @@
-# 1) Base image
+# Use official PHP CLI image
 FROM php:8.1-cli
 
-# 2) Install system deps including git for Composer
+# Install git for Composer source installs
 RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-      git \
-      unzip \
-      zip \
+ && apt-get install -y --no-install-recommends git unzip zip \
  && rm -rf /var/lib/apt/lists/*
 
-# 3) Set working dir
+# Set working directory
 WORKDIR /app
 
-# 4) Copy only composer files & install PHP deps
+# Copy only composer files first to cache deps
 COPY composer.json composer.lock ./
+
+# Download and install PHP dependencies
 RUN curl -sS https://getcomposer.org/installer | php \
  && php composer.phar install --no-dev --optimize-autoloader
 
-# 5) Copy the rest of your app
+# Copy the rest of your application
 COPY . .
 
-# 6) Expose a default port (Railway will override $PORT)
+# Expose a default port (Railway will override $PORT for you)
 EXPOSE 8080
 
-# 7) Launch PHP built-in server on the dynamic port
+# Use a shell so that $PORT is expanded at runtime, with a default
 CMD ["sh", "-c", "php -S 0.0.0.0:${PORT:-8080} -t public"]
