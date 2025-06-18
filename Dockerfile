@@ -8,11 +8,11 @@ RUN apt-get update && apt-get install -y libzip-dev unzip \
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
-# Set working directory
 WORKDIR /var/www/html
-
-# Copy project files
 COPY . .
+
+# Move contents of /public into /var/www/html
+RUN rm -rf /var/www/html/* && cp -r /var/www/html/public/* /var/www/html/
 
 # Install composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
