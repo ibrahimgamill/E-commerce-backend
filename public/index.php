@@ -2,6 +2,12 @@
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: *");
 header("Access-Control-Allow-Methods: *");
+$envPath = __DIR__ . '/../.env';
+
+if (file_exists($envPath)) {
+    $dotenv = Dotenv\Dotenv::createImmutable(dirname($envPath));
+    $dotenv->load();
+}
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     http_response_code(200);
     exit();
