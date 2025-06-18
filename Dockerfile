@@ -10,7 +10,8 @@
            RUN a2enmod rewrite
 
            # Copy source code into the container
-           COPY . /var/www/html/
+           COPY public/ /var/www/html/
+
 
            # Set working directory
            WORKDIR /var/www/html
