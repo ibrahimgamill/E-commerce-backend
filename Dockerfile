@@ -31,6 +31,10 @@ RUN sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available
 # Set permissions (optional but good practice)
 RUN chown -R www-data:www-data /var/www/html
 
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost/health.txt || exit 1
+
+
 EXPOSE 80
 
 CMD ["apache2-foreground"]
