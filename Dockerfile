@@ -1,27 +1,31 @@
+# Use official PHP-Apache image
 FROM php:8.3-apache
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y libzip-dev unzip \
-    && docker-php-ext-install zip \
-    && docker-php-ext-install pdo pdo_mysql
+# Enable required Apache modules
+RUN docker-php-ext-install pdo pdo_mysql
 
-# Enable Apache mod_rewrite
+# Enable Apache rewrite module
 RUN a2enmod rewrite
 
+# Set working directory to /var/www/html (default Apache root)
 WORKDIR /var/www/html
+
+# Copy composer files and install dependencies
+COPY composer.json composer.lock ./
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+RUN composer install --no-dev --optimize-autoloader
+
+# Copy the rest of your app code into the container
 COPY . .
 
-# Move contents of /public into /var/www/html
-RUN rm -rf /var/www/html/* && cp -r /var/www/html/public/* /var/www/html/
+# Set Apache DocumentRoot to /var/www/html/public
+RUN sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
 
-# Install composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
-
-# Set permissions
+# If you have .htaccess in public, make sure permissions are set (optional)
 RUN chown -R www-data:www-data /var/www/html
 
+# Expose port 80 (Apache default)
 EXPOSE 80
 
+# Start Apache in the foreground
 CMD ["apache2-foreground"]
