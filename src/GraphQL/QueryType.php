@@ -4,8 +4,7 @@ namespace App\GraphQL;
 
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\Type;
-use App\GraphQL\Types\ProductType;
-use App\GraphQL\Types\CategoryType;
+use App\GraphQL\Types\Types; // <-- use the new Types class
 use App\Services\ProductService;
 
 class QueryType extends ObjectType
@@ -16,7 +15,7 @@ class QueryType extends ObjectType
             'name'   => 'Query',
             'fields' => [
                 'products' => [
-                    'type'    => Type::listOf(new ProductType()),
+                    'type'    => Type::listOf(Types::product()),
                     'args'    => [
                         'category' => [
                             'type' => Type::string(),
@@ -32,14 +31,14 @@ class QueryType extends ObjectType
                     }
                 ],
                 'categories' => [
-                    'type'    => Type::listOf(new CategoryType()),
+                    'type'    => Type::listOf(Types::category()),
                     'resolve' => function() {
                         $service = new ProductService();
                         return $service->getCategories();
                     }
                 ],
                 'product' => [
-                    'type'    => new ProductType(),
+                    'type'    => Types::product(),
                     'args'    => [
                         'id' => Type::nonNull(Type::string())
                     ],

@@ -16,7 +16,7 @@ class AttributeSetType extends ObjectType
                 'name' => Type::string(),
                 'type' => Type::string(),
                 'items' => [
-                    'type' => Type::listOf(new AttributeItemType())
+                    'type' => Type::listOf(Types::attributeItem())
                 ]
             ]
         ]);
