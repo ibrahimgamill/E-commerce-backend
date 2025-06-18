@@ -1,42 +1,40 @@
+# Use the official PHP + Apache image
 FROM php:8.3-apache
 
-# Install system dependencies FIRST
-RUN apt-get update \
-    && apt-get install -y \
-        libzip-dev \
-        git \
-        unzip \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install PHP extensions
-RUN docker-php-ext-install pdo pdo_mysql zip
-
-# Enable Apache rewrite module
-RUN a2enmod rewrite
+# Install system deps & PHP extensions in one go
+RUN apt-get update && \
+    apt-get install -y libzip-dev git unzip && \
+    docker-php-ext-install pdo pdo_mysql zip && \
+    a2enmod rewrite headers && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www/html
 
-# Copy composer files first, install dependencies
+# Copy composer manifest & install
 COPY composer.json composer.lock ./
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-RUN composer install --no-dev --optimize-autoloader
+RUN curl -sS https://getcomposer.org/installer \
+      | php -- --install-dir=/usr/local/bin --filename=composer && \
+    composer install --no-dev --optimize-autoloader
 
-# Copy the rest of your app code
+# Copy your app code (including public/, src/, vendor/, etc.)
 COPY . .
-RUN ls -la /var/www/html/public
 
+# At runtime, Apache needs to listen on $PORT not hard-coded 80.
+# We do this in our entrypoint command below so that we pick up the
+# env var that Render injects (or you override).
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 
-# Set Apache DocumentRoot to /var/www/html/public
-RUN sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
+# Update the VirtualHost and ports.conf at container start
+CMD ["sh","-c", \
+    "sed -i 's|Listen 80|Listen ${PORT:-80}|g' /etc/apache2/ports.conf && \
+     sed -i 's|<VirtualHost \\*:80>|<VirtualHost *:${PORT:-80}>|g' /etc/apache2/sites-available/000-default.conf && \
+     sed -i 's|DocumentRoot /var/www/html|DocumentRoot ${APACHE_DOCUMENT_ROOT}|g' /etc/apache2/sites-available/000-default.conf && \
+     apache2-foreground"]
 
-# Set permissions (optional but good practice)
-RUN chown -R www-data:www-data /var/www/html
-
+# Healthcheck uses localhost inside the container
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost/health.txt || exit 1
+  CMD curl -f http://localhost:${PORT:-80}/health.txt || exit 1
 
-
+# Let Docker/Render know what port we expect
 EXPOSE 80
 
-CMD ["apache2-foreground"]
