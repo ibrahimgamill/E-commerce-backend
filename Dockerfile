@@ -1,23 +1,27 @@
 FROM php:8.3-apache
 
-# Install tools
-RUN apt-get update && apt-get install -y git unzip
+# Install system dependencies
+RUN apt-get update && apt-get install -y libzip-dev unzip \
+    && docker-php-ext-install zip \
+    && docker-php-ext-install pdo pdo_mysql
 
-# Enable Apache rewrite
+# Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
+# Set working directory
 WORKDIR /var/www/html
 
-# Copy everything
+# Copy project files
 COPY . .
 
-# Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Install composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Install PHP deps
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Set Apache to serve from /public
-RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html
 
 EXPOSE 80
+
+CMD ["apache2-foreground"]
