@@ -24,6 +24,8 @@ RUN composer install --no-dev --optimize-autoloader
 
 # Copy the rest of your app code
 COPY . .
+RUN ls -la /var/www/html/public
+
 
 # Set Apache DocumentRoot to /var/www/html/public
 RUN sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
