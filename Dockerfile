@@ -25,11 +25,18 @@ COPY . .
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 
 # Update the VirtualHost and ports.conf at container start
-CMD ["sh","-c", \
-    "sed -i 's|Listen 80|Listen ${PORT:-80}|g' /etc/apache2/ports.conf && \
-     sed -i 's|<VirtualHost \\*:80>|<VirtualHost *:${PORT:-80}>|g' /etc/apache2/sites-available/000-default.conf && \
-     sed -i 's|DocumentRoot /var/www/html|DocumentRoot ${APACHE_DOCUMENT_ROOT}|g' /etc/apache2/sites-available/000-default.conf && \
-     apache2-foreground"]
+# …everything else stays the same…
+
+# At runtime, Apache needs to listen on $PORT (Render sets this), so we patch ports.conf
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+
+CMD ["sh","-c", "\
+  sed -i \"s|Listen 80|Listen ${PORT:-80}|g\" /etc/apache2/ports.conf && \
+  sed -i \"s|<VirtualHost \\*:80>|<VirtualHost *:${PORT:-80}>|g\" /etc/apache2/sites-available/000-default.conf && \
+  sed -i \"s|DocumentRoot /var/www/html|DocumentRoot ${APACHE_DOCUMENT_ROOT}|g\" /etc/apache2/sites-available/000-default.conf && \
+  apache2-foreground\
+"]
+
 
 # Healthcheck uses localhost inside the container
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
