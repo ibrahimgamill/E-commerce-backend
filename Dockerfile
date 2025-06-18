@@ -13,6 +13,11 @@ WORKDIR /var/www/html
 # Copy composer files and install dependencies
 COPY composer.json composer.lock ./
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+RUN docker-php-ext-install zip
+RUN apt-get update \
+    && apt-get install -y git unzip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 RUN composer install --no-dev --optimize-autoloader
 
 # Copy the rest of your app code into the container
