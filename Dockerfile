@@ -8,6 +8,11 @@ RUN apt-get update && \
     a2enmod rewrite headers && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# enable rewrite + .htaccess
+RUN a2enmod rewrite \
+ && sed -i 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+
+
 WORKDIR /var/www/html
 
 # Copy composer manifest & install
