@@ -28,8 +28,7 @@ RUN curl -sS https://getcomposer.org/installer \
 # 5) Copy the rest of your app
 COPY . .
 
-# 6) Expose health check file
-COPY health.txt /var/www/html/public/health.txt
+
 
 # 7) Patch Apache to use $PORT
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
