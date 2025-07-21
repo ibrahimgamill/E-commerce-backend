@@ -5,13 +5,14 @@ FROM php:8.3-apache
 RUN apt-get update && \
     apt-get install -y libzip-dev git unzip && \
     docker-php-ext-install pdo pdo_mysql zip && \
+    # Suppress the ServerName warning
+    echo "ServerName localhost" >> /etc/apache2/apache2.conf && \
     a2enmod rewrite headers && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # enable rewrite + .htaccess
 RUN a2enmod rewrite \
  && sed -i 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
-
 
 WORKDIR /var/www/html
 
@@ -24,15 +25,10 @@ RUN curl -sS https://getcomposer.org/installer \
 # Copy your app code (including public/, src/, vendor/, etc.)
 COPY . .
 
-# At runtime, Apache needs to listen on $PORT not hard-coded 80.
-# We do this in our entrypoint command below so that we pick up the
-# env var that Render injects (or you override).
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+# Ensure health.txt is served from the public folder
+COPY health.txt /var/www/html/public/health.txt
 
-# Update the VirtualHost and ports.conf at container start
-# …everything else stays the same…
-
-# At runtime, Apache needs to listen on $PORT (Render sets this), so we patch ports.conf
+# At runtime, Apache needs to listen on $PORT not hard‑coded 80.
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 
 CMD ["sh","-c", "\
@@ -42,11 +38,9 @@ CMD ["sh","-c", "\
   apache2-foreground\
 "]
 
-
 # Healthcheck uses localhost inside the container
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:${PORT:-80}/health.txt || exit 1
 
 # Let Docker/Render know what port we expect
 EXPOSE 80
-
